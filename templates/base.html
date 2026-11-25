@@ -1,0 +1,5 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WhatsApp Trace X | Phantom Team</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body><header><div class="brand"><img class="team-logo" src="/assets/phantom_team_logo.jpg" alt="Phantom Team logo"><div><h1>WHATSAPP TRACE X</h1><p>Digital Evidence & Incident Organizer</p></div></div><div class="credit">PHANTOM TEAM <b>· BY KRRISH</b><small>@mahisec_13</small></div></header>
+<main>{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category,message in messages %}<div class="flash {{category}}">{{message}}</div>{% endfor %}{% endif %}{% endwith %}{% block content %}{% endblock %}</main>
+<footer>LOCAL-FIRST TOOL · KEYWORD FLAGS REQUIRE HUMAN REVIEW · NO ACCOUNT ACCESS</footer></body></html>

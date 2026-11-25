@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% block content %}
+<section class="hero"><div><span class="eyebrow">PHANTOM TEAM / CASE MANAGEMENT</span><h2>Evidence. Timeline. Clarity.</h2><p>Organize victim-provided WhatsApp exports and supporting evidence locally on this laptop.</p></div><div class="hero-icon">⌁</div></section>
+<div class="stats"><div><strong>{{totals.cases}}</strong><span>Cases</span></div><div><strong>{{totals.evidence}}</strong><span>Evidence files</span></div><div><strong>{{totals.findings}}</strong><span>Possible indicators</span></div></div>
+<section class="panel"><h3>＋ Create investigation case</h3><form method="post" action="{{url_for('new_case')}}" class="form-grid">
+<label>Case title<input name="title" maxlength="120" required placeholder="Example: WhatsApp harassment report"></label>
+<label>Reported number (with country code)<input name="phone" maxlength="40" placeholder="+91… (optional)"></label>
+<label class="wide">Notes<textarea name="notes" rows="3" maxlength="2000" placeholder="Brief incident notes. Avoid unnecessary sensitive details."></textarea></label>
+<div class="wide"><button>Create case</button></div></form></section>
+<section class="panel"><h3>Investigation cases</h3>{% if cases %}<div class="case-list">{% for c in cases %}<a class="case" href="{{url_for('case_detail',case_id=c.id)}}"><div><b>#{{c.id}} · {{c.title}}</b><small>{{c.created_at}} · {{c.phone or 'No number recorded'}}</small></div><span>{{c.evidence_count}} files →</span></a>{% endfor %}</div>{% else %}<p class="muted">No cases yet. Create a case to begin.</p>{% endif %}</section>
+<div class="notice">Safety note: preserve original messages and do not confront or threaten the suspected sender. Automated text flags are not proof of wrongdoing.</div>
+{% endblock %}

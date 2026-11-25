@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+trace_x.db
+evidence/*
+reports/*
+.env

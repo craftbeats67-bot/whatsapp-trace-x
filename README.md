@@ -1,50 +1,52 @@
 # WHATSAPP TRACE X
 **PHANTOM TEAM · BY KRRISH · @mahisec_13**
 
-A local-first digital evidence organizer for WhatsApp blackmail/harassment reports.
+A local-first evidence organizer for WhatsApp chat exports and supporting files. It offers two interfaces over the same local case database.
 
-## Features
-- Create local incident cases.
-- Import WhatsApp `.txt` chat exports.
-- Parse common WhatsApp export timestamp formats.
-- Flag possible threat, money-demand, and coercion language for human review.
-- Upload supporting TXT, PNG, JPG, JPEG, and PDF evidence (max 10 MB each).
-- Calculate SHA-256 hashes and verify whether stored evidence changed.
-- Download a generated PDF case report with case details, evidence register, SHA-256 hashes, and preliminary indicators.
-- Export a JSON case report.
-- Terminal CLI analyzer.
+## Two modes
 
-## Kali Linux installation
+### 1) Desktop mode — local web dashboard
+```bash
+./start.sh
+# Choose 1
+```
+Open `http://127.0.0.1:5000` on the same device.
+
+### 2) Terminal mode — menu-driven CLI
+```bash
+./start.sh
+# Choose 2
+```
+All case operations are available from the terminal menu: create/list/view cases, add evidence, inspect preliminary chat indicators, verify SHA-256 hashes, and export PDF/JSON reports.
+
+## Install
+
+Linux / Kali:
 ```bash
 sudo apt update
 sudo apt install -y python3 python3-venv
-chmod +x run.sh
-./run.sh
+chmod +x start.sh run.sh
+./start.sh
 ```
-Open `http://127.0.0.1:5000` on the same laptop.
 
-## PDF report
-Open a case and tap **Download PDF report**. The PDF is generated locally when requested; original evidence files are not embedded in the report. Install dependencies with `pip install -r requirements.txt` to enable PDF export.
-
-## CLI usage
+Android Termux (F-Droid):
 ```bash
-source .venv/bin/activate
-python cli.py /path/to/WhatsApp_Chat.txt --json report.json
+pkg update
+pkg install python
+chmod +x start.sh
+./start.sh
 ```
+If `venv` support is unavailable in your Termux build, install dependencies with `pip install -r requirements.txt` in a supported Python environment and run `python app.py` or `python terminal.py` directly.
 
-## How to export a WhatsApp chat
-In WhatsApp, open the relevant chat, use the chat menu and choose **Export chat**. Prefer **without media** for the TXT analysis. Only import chats the victim has chosen to provide and is authorized to share.
+## Evidence and reports
+- Supports TXT, PDF, PNG, JPG and JPEG files up to 10 MB.
+- TXT WhatsApp exports are parsed for preliminary threat/coercion/money-demand indicators; these are review prompts, not proof.
+- Other file types are stored locally and hashed, but their contents are not automatically analyzed.
+- PDF/JSON reports contain case details, evidence metadata and hashes; original evidence is not embedded.
+- SHA-256 verification detects whether a stored file differs from its recorded hash. It does not prove who created it or authenticate its contents.
 
-## Important limitations
-- This tool does not access WhatsApp servers, private accounts, phone locations, IP addresses, passwords, or message databases.
-- A phone number format check does not prove who owns that number.
-- Keyword flags are only clues. They can produce false positives and miss context, sarcasm, other languages, or spelling variations.
-- The tool cannot authenticate screenshots or prove who sent a message.
-- Keep the original WhatsApp export and device intact. Do not edit original evidence.
-- Reports are organizational aids, not legal findings.
-
-## Privacy
-The app binds only to `127.0.0.1` and does not upload evidence to a cloud service. Keep the project folder private, use full-disk encryption, and do not share reports containing personal information except with the victim, trusted support, or appropriate authorities.
-
-## Branding
-PHANTOM TEAM · BY KRRISH · Instagram: @mahisec_13
+## Privacy and limitations
+- Dashboard binds only to `127.0.0.1`; evidence remains on the device in this local-first build.
+- No WhatsApp account/server access, IP lookup, identity discovery, location tracking, password access, or account intrusion.
+- Use only chats/files that you own or have permission to review. Keep personal data private and preserve originals.
+- Automated flags can be wrong or incomplete. Review full context; this is not a legal finding.

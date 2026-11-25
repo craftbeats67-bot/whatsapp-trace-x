@@ -10,6 +10,7 @@ A local-first digital evidence organizer for WhatsApp blackmail/harassment repor
 - Flag possible threat, money-demand, and coercion language for human review.
 - Upload supporting TXT, PNG, JPG, JPEG, and PDF evidence (max 10 MB each).
 - Calculate SHA-256 hashes and verify whether stored evidence changed.
+- Download a generated PDF case report with case details, evidence register, SHA-256 hashes, and preliminary indicators.
 - Export a JSON case report.
 - Terminal CLI analyzer.
 
@@ -21,6 +22,9 @@ chmod +x run.sh
 ./run.sh
 ```
 Open `http://127.0.0.1:5000` on the same laptop.
+
+## PDF report
+Open a case and tap **Download PDF report**. The PDF is generated locally when requested; original evidence files are not embedded in the report. Install dependencies with `pip install -r requirements.txt` to enable PDF export.
 
 ## CLI usage
 ```bash

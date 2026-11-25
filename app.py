@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 from werkzeug.utils import secure_filename
 from pathlib import Path
 from datetime import datetime, timezone
-import sqlite3, hashlib, json, re, os, io
+import sqlite3, hashlib, json, re, os, io, html
 from analyzer import parse_chat, analyze_messages
 
 ROOT = Path(__file__).resolve().parent
@@ -22,6 +22,8 @@ def db():
     return con
 
 def init_db():
+    EVIDENCE.mkdir(parents=True, exist_ok=True)
+    REPORTS.mkdir(parents=True, exist_ok=True)
     with db() as con:
         con.executescript("""
         CREATE TABLE IF NOT EXISTS cases (
@@ -198,6 +200,128 @@ def report(case_id):
     out = REPORTS / f"case_{case_id}_report.json"
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return send_file(out, as_attachment=True)
+
+@app.route("/case/<int:case_id>/report.pdf")
+def report_pdf(case_id):
+    """Build a downloadable PDF summary locally; original evidence is not embedded."""
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.enums import TA_CENTER
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import mm
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+    except ImportError:
+        flash("PDF export needs ReportLab. Install dependencies with: pip install -r requirements.txt", "error")
+        return redirect(url_for("case_detail", case_id=case_id))
+
+    with db() as con:
+        case = con.execute("SELECT * FROM cases WHERE id=?", (case_id,)).fetchone()
+        if not case:
+            abort(404)
+        evidence = con.execute("SELECT * FROM evidence WHERE case_id=? ORDER BY id", (case_id,)).fetchall()
+        findings = con.execute("""SELECT f.*,e.original_name FROM findings f
+            JOIN evidence e ON e.id=f.source_evidence_id
+            WHERE f.case_id=? ORDER BY f.id""", (case_id,)).fetchall()
+
+    # Use a Unicode font when one is installed; otherwise fall back to Helvetica.
+    font_name = "Helvetica"
+    bold_font_name = "Helvetica-Bold"
+    font_candidates = [
+        ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+        ("/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf", "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf"),
+    ]
+    for regular_path, bold_path in font_candidates:
+        if os.path.exists(regular_path):
+            try:
+                pdfmetrics.registerFont(TTFont("TraceUnicode", regular_path))
+                font_name = "TraceUnicode"
+                if os.path.exists(bold_path):
+                    pdfmetrics.registerFont(TTFont("TraceUnicode-Bold", bold_path))
+                    bold_font_name = "TraceUnicode-Bold"
+                else:
+                    bold_font_name = font_name
+                break
+            except Exception:
+                pass
+
+    def safe(value):
+        return html.escape(str(value if value is not None else "" )).replace("\n", "<br/>")
+
+    generated = now()
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=17*mm, leftMargin=17*mm,
+                            topMargin=18*mm, bottomMargin=18*mm,
+                            title=f"WhatsApp Trace X - Case {case_id}",
+                            author="PHANTOM TEAM | WhatsApp Trace X")
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name="TraceTitle", parent=styles["Title"], fontName=bold_font_name,
+                              fontSize=18, leading=23, textColor=colors.HexColor("#087f8c"), alignment=TA_CENTER, spaceAfter=4))
+    styles.add(ParagraphStyle(name="TraceSub", parent=styles["Normal"], fontName=font_name,
+                              fontSize=8, leading=11, textColor=colors.HexColor("#555555"), alignment=TA_CENTER, spaceAfter=12))
+    styles.add(ParagraphStyle(name="TraceHeading", parent=styles["Heading2"], fontName=bold_font_name,
+                              fontSize=11, leading=14, textColor=colors.HexColor("#087f8c"), spaceBefore=10, spaceAfter=6))
+    styles.add(ParagraphStyle(name="TraceBody", parent=styles["BodyText"], fontName=font_name,
+                              fontSize=8.5, leading=12, wordWrap="CJK", spaceAfter=4))
+    styles.add(ParagraphStyle(name="TraceSmall", parent=styles["BodyText"], fontName=font_name,
+                              fontSize=7, leading=9, wordWrap="CJK"))
+    story = [Paragraph("WHATSAPP TRACE X", styles["TraceTitle"]),
+             Paragraph("PHANTOM TEAM · BY KRRISH · @mahisec_13", styles["TraceSub"]),
+             Paragraph(f"CASE #{case_id} — {safe(case['title'])}", styles["Heading1"]),
+             Paragraph(f"<b>Created:</b> {safe(case['created_at'])}<br/><b>Contact field:</b> {safe(case['phone'] or 'Not recorded')}<br/><b>Report generated:</b> {safe(generated)}", styles["TraceBody"])]
+    if case["notes"]:
+        story += [Paragraph("Case notes", styles["TraceHeading"]), Paragraph(safe(case["notes"]), styles["TraceBody"])]
+
+    story.append(Paragraph("Evidence register", styles["TraceHeading"]))
+    if evidence:
+        rows = [["File", "Type", "Size", "SHA-256"]]
+        for item in evidence:
+            rows.append([Paragraph(safe(item["original_name"]), styles["TraceSmall"]),
+                         Paragraph(safe(item["kind"]), styles["TraceSmall"]),
+                         f"{item['size']} bytes",
+                         Paragraph(safe(item["sha256"]), styles["TraceSmall"])])
+        table = Table(rows, colWidths=[48*mm, 32*mm, 22*mm, 72*mm], repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#e6f2f3")),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.HexColor("#12383d")),
+            ("FONTNAME", (0,0), (-1,0), bold_font_name),
+            ("FONTNAME", (0,1), (-1,-1), font_name),
+            ("FONTSIZE", (0,0), (-1,-1), 7),
+            ("GRID", (0,0), (-1,-1), 0.35, colors.HexColor("#b8c7c9")),
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ("LEFTPADDING", (0,0), (-1,-1), 5), ("RIGHTPADDING", (0,0), (-1,-1), 5),
+            ("TOPPADDING", (0,0), (-1,-1), 5), ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+        ]))
+        story.append(table)
+    else:
+        story.append(Paragraph("No evidence has been added to this case.", styles["TraceBody"]))
+
+    story.append(Paragraph("Possible message indicators", styles["TraceHeading"]))
+    story.append(Paragraph("These are keyword-based review prompts, not conclusions. Read the full conversation and surrounding context.", styles["TraceBody"]))
+    if findings:
+        for idx, item in enumerate(findings, 1):
+            story.append(Paragraph(f"<b>{idx}. {safe(item['category'])}</b> · {safe(item['message_time'])}<br/><b>Source:</b> {safe(item['original_name'])}<br/>{safe(item['message'])}", styles["TraceBody"]))
+    else:
+        story.append(Paragraph("No indicators were flagged. This does not prove that no threat occurred.", styles["TraceBody"]))
+
+    story += [Spacer(1, 8), Paragraph("Important limitations", styles["TraceHeading"]),
+              Paragraph("This report is an organizational aid, not a legal finding. Automated keyword indicators can be wrong or incomplete. File hashes help check whether stored files changed; they do not prove who created a file or whether its contents are authentic. Original evidence should be preserved and reviewed by an appropriate trusted person or authority.", styles["TraceBody"]),
+              Paragraph("LOCAL-FIRST TOOL · NO WHATSAPP ACCOUNT ACCESS · NO IDENTITY OR LOCATION LOOKUP", styles["TraceSub"])]
+
+    def footer(canvas, document):
+        canvas.saveState()
+        canvas.setFont(font_name, 7)
+        canvas.setFillColor(colors.HexColor("#666666"))
+        canvas.drawString(17*mm, 10*mm, "WhatsApp Trace X | PHANTOM TEAM")
+        canvas.drawRightString(A4[0]-17*mm, 10*mm, f"Page {document.page}")
+        canvas.restoreState()
+
+    doc.build(story, onFirstPage=footer, onLaterPages=footer)
+    buffer.seek(0)
+    return send_file(buffer, mimetype="application/pdf", as_attachment=True,
+                     download_name=f"whatsapp_trace_x_case_{case_id}_report.pdf")
 
 @app.route("/case/<int:case_id>/verify")
 def verify(case_id):

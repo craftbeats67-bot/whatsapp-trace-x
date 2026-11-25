@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% block content %}
 <a class="back" href="{{url_for('index')}}">← All cases</a>
-<section class="hero compact"><div><span class="eyebrow">CASE #{{case.id}}</span><h2>{{case.title}}</h2><p>{{case.created_at}} · {{case.phone or 'No number recorded'}}</p></div><a class="button secondary" href="{{url_for('report',case_id=case.id)}}">Export JSON report</a></section>
+<section class="hero compact"><div><span class="eyebrow">CASE #{{case.id}}</span><h2>{{case.title}}</h2><p>{{case.created_at}} · {{case.phone or 'No number recorded'}}</p></div><div class="actions"><a class="button secondary" href="{{url_for('report_pdf',case_id=case.id)}}">Download PDF report</a><a class="button secondary" href="{{url_for('report',case_id=case.id)}}">Export JSON report</a></div></section>
 {% if case.notes %}<section class="panel"><h3>Case notes</h3><p>{{case.notes}}</p></section>{% endif %}
 <section class="panel"><h3>＋ Add evidence</h3><p class="muted">TXT chat exports are parsed locally. Images and PDFs are stored and hashed, not interpreted.</p><form method="post" enctype="multipart/form-data" action="{{url_for('upload',case_id=case.id)}}" class="upload"><input type="file" name="file" accept=".txt,.png,.jpg,.jpeg,.pdf" required><button>Save evidence</button></form></section>
 <section class="panel"><div class="section-head"><h3>Evidence register</h3><a href="{{url_for('verify',case_id=case.id)}}">Verify file hashes →</a></div>

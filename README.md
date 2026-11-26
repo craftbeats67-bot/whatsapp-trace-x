@@ -1,52 +1,46 @@
-# WHATSAPP TRACE X
-**PHANTOM TEAM · BY KRRISH · @mahisec_13**
+# WhatsApp Trace X — PHANTOM TEAM
 
-A local-first evidence organizer for WhatsApp chat exports and supporting files. It offers two interfaces over the same local case database.
+A local-only evidence organizer for documenting suspected blackmail. Includes a Flask desktop dashboard and an interactive terminal menu. It does not access WhatsApp accounts, retrieve private identities, trace IP addresses, locate people, or contact phone numbers.
 
-## Two modes
+## Features
+- Create investigation cases with an optional country calling code and user-supplied number.
+- Structural phone-number format check (not ownership, activity, or WhatsApp verification).
+- Import TXT/PDF/PNG/JPG/JPEG/WEBP evidence (10 MB maximum); TXT receives preliminary keyword review; every file gets a SHA-256 hash.
+- Add investigator timeline notes.
+- Inspect invitation message URLs as text only; links are never opened or downloaded.
+- Verify stored evidence hashes.
+- Generate PDF case reports.
+- Desktop and terminal modes share one local SQLite database.
 
-### 1) Desktop mode — local web dashboard
+## Android Termux / Linux / Kali
 ```bash
-./start.sh
-# Choose 1
-```
-Open `http://127.0.0.1:5000` on the same device.
-
-### 2) Terminal mode — menu-driven CLI
-```bash
-./start.sh
-# Choose 2
-```
-All case operations are available from the terminal menu: create/list/view cases, add evidence, inspect preliminary chat indicators, verify SHA-256 hashes, and export PDF/JSON reports.
-
-## Install
-
-Linux / Kali:
-```bash
-sudo apt update
-sudo apt install -y python3 python3-venv
-chmod +x start.sh run.sh
-./start.sh
-```
-
-Android Termux (F-Droid):
-```bash
-pkg update
-pkg install python
+pkg update -y
+pkg install python -y
+# Extract the ZIP, enter the project directory:
 chmod +x start.sh
 ./start.sh
 ```
-If `venv` support is unavailable in your Termux build, install dependencies with `pip install -r requirements.txt` in a supported Python environment and run `python app.py` or `python terminal.py` directly.
+The launcher creates a virtual environment where supported and installs dependencies. On first run it needs internet access to install Flask and ReportLab.
 
-## Evidence and reports
-- Supports TXT, PDF, PNG, JPG and JPEG files up to 10 MB.
-- TXT WhatsApp exports are parsed for preliminary threat/coercion/money-demand indicators; these are review prompts, not proof.
-- Other file types are stored locally and hashed, but their contents are not automatically analyzed.
-- PDF/JSON reports contain case details, evidence metadata and hashes; original evidence is not embedded.
-- SHA-256 verification detects whether a stored file differs from its recorded hash. It does not prove who created it or authenticate its contents.
+## Desktop mode
+Choose `1` in the launcher, then open `http://127.0.0.1:5000` on the same device.
+
+## Terminal mode
+Choose `2`. Menu options include create/list/view case, add evidence, add notes, verify SHA-256, generate PDF, validate a phone format, and inspect pasted invitation text.
+
+## PDF location
+`reports/case_<CASE_ID>_report.pdf`
 
 ## Privacy and limitations
-- Dashboard binds only to `127.0.0.1`; evidence remains on the device in this local-first build.
-- No WhatsApp account/server access, IP lookup, identity discovery, location tracking, password access, or account intrusion.
-- Use only chats/files that you own or have permission to review. Keep personal data private and preserve originals.
-- Automated flags can be wrong or incomplete. Review full context; this is not a legal finding.
+- Keep this project local. Do not expose the dashboard to the public internet.
+- Do not upload private chats, screenshots, database files, evidence, passwords, tokens, or `.env` files to GitHub.
+- Keyword hits are only review prompts and may produce false positives/negatives. They do not prove blackmail.
+- Phone checks are formatting-only. The tool cannot identify the owner or location of a number.
+- URL inspection is static text parsing only; it does not visit links, resolve redirects, join groups, or download content.
+- Preserve originals and share evidence with the appropriate authorities. Do not confront or threaten a suspect.
+
+## Project checks
+```bash
+python -m py_compile core.py app.py terminal.py
+python -m unittest discover -s tests -v
+```

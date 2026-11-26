@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<h1>Phone number format check</h1><section class="panel"><p>{{ 'Valid-looking international format:' if ok else 'Format issue:' }} <b>{{result}}</b></p><p class="muted">This validates formatting only. It does not confirm that the number is active, who owns it, or whether it uses WhatsApp.</p><a href="/">Back</a></section>{% endblock %}

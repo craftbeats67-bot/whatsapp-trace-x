@@ -1,27 +1,18 @@
-#!/usr/bin/env bash
-set -e
+#!/data/data/com.termux/files/usr/bin/bash
+set -eu
 cd "$(dirname "$0")"
-PYTHON_BIN="$(command -v python3 || command -v python)"
-if [ ! -d .venv ]; then
-  "$PYTHON_BIN" -m venv .venv 2>/dev/null || true
-fi
-if [ -f .venv/bin/activate ]; then
-  source .venv/bin/activate
-  PYTHON_BIN="$(command -v python)"
-fi
-"$PYTHON_BIN" -m pip install -q -r requirements.txt
+if [ ! -d .venv ]; then python -m venv .venv 2>/dev/null || true; fi
+if [ -x .venv/bin/python ]; then PY=.venv/bin/python; PIP=.venv/bin/pip; else PY=python; PIP='python -m pip'; fi
+$PIP install -r requirements.txt
 while true; do
-  echo
-  echo '=========================================='
-  echo ' WHATSAPP TRACE X | PHANTOM TEAM'
-  echo '=========================================='
-  echo '1) Desktop mode (local web dashboard)'
-  echo '2) Terminal mode (menu-driven CLI)'
-  echo '0) Exit'
-  read -r -p 'Select mode: ' mode
-  case "$mode" in
-    1) "$PYTHON_BIN" app.py; break ;;
-    2) "$PYTHON_BIN" terminal.py ;;
+  echo; echo '=== WHATSAPP TRACE X | PHANTOM TEAM ==='
+  echo '1 Desktop dashboard'
+  echo '2 Terminal mode'
+  echo '0 Exit'
+  read -r -p 'Select: ' choice
+  case "$choice" in
+    1) "$PY" app.py ;;
+    2) "$PY" terminal.py ;;
     0) exit 0 ;;
     *) echo 'Invalid option.' ;;
   esac

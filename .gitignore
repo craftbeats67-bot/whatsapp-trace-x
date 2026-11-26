@@ -1,7 +1,10 @@
 .venv/
 __pycache__/
-*.pyc
-trace_x.db
-evidence/*
-reports/*
+*.py[cod]
 .env
+*.db
+*.sqlite3
+data/evidence/*
+!data/evidence/.gitkeep
+reports/*
+!reports/.gitkeep
